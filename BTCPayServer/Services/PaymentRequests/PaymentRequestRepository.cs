@@ -132,13 +132,22 @@ namespace BTCPayServer.Services.PaymentRequests
 
             if (!string.IsNullOrEmpty(query.SearchText))
             {
-                var searchText = query.SearchText;
+                string EscapeLikePattern(string input)
+                {
+                    return input
+                        .Replace(@"\", @"\\")  // Escape backslash
+                        .Replace("%", @"\%")   // Escape percent
+                        .Replace("_", @"\_");  // Escape underscore
+                }
+                
+                var searchText = EscapeLikePattern(query.SearchText);
 
-                queryable = context.PaymentRequests.FromSqlInterpolated($@"
-                    SELECT * FROM public.""PaymentRequests""
-                    WHERE ""Blob2"" ->> 'referenceNumber' = {searchText}
-                       OR ""Blob2"" ->> 'title' ILIKE {'%' + searchText + '%'}
-                ");
+                queryable = context.PaymentRequests.FromSqlInterpolated(
+                    $"""
+                     SELECT * FROM "PaymentRequests"
+                     WHERE "Blob2" ->> 'referenceNumber' = {searchText}
+                     OR "Blob2" ->> 'title' ILIKE {'%' + searchText + '%'}  ESCAPE '\'            
+                     """);
             }
             else
             {
