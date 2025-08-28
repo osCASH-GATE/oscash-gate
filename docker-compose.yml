@@ -1,0 +1,112 @@
+# osCASH.me GATE - Self-hosted cryptocurrency payment gateway
+# Based on BTCPay Server with osCASH.me enhancements
+version: '3.8'
+
+services:
+  # osCASH.me GATE Main Service
+  oscash-gate:
+    build: .
+    container_name: oscash-gate
+    restart: unless-stopped
+    ports:
+      - "23000:80"  # osCASH.me GATE runs on port 23000
+    environment:
+      # Basic Configuration
+      BTCPAY_HOST: oscash-gate
+      BTCPAY_BIND: 0.0.0.0:80
+      BTCPAY_ROOTPATH: /
+      
+      # Database Connection
+      BTCPAY_POSTGRES: "User ID=postgres;Host=postgres;Port=5432;Database=btcpayserver;Password=osCASHgate2025!"
+      
+      # Network Configuration  
+      BTCPAY_NETWORK: mainnet
+      BTCPAY_CHAINS: btc
+      
+      # osCASH.me Specific
+      BTCPAY_BRAND_TITLE: "osCASH.me GATE"
+      BTCPAY_BRAND_DESCRIPTION: "Privacy-First Payment Gateway"
+      
+      # Explorer Configuration (NBXplorer)
+      BTCPAY_EXPLORERURL: http://nbxplorer:32838/
+      BTCPAY_EXPLORERCOOKIEFILE: /datadir/.nbxplorer/Main/.cookie
+      
+      # Security
+      BTCPAY_SSHKEYFILE: /datadir/id_rsa_btcpay
+      BTCPAY_SSHTRUSTEDFINGERPRINTS: ""
+      
+      # Logging
+      BTCPAY_LOGS: logs
+      ASPNETCORE_ENVIRONMENT: Production
+      
+    volumes:
+      - "oscash_datadir:/datadir"
+      - "oscash_pluginsdir:/app/Plugins"
+    depends_on:
+      - postgres  
+      - nbxplorer
+    networks:
+      - oscash-network
+
+  # NBXplorer - Bitcoin blockchain indexer
+  nbxplorer:
+    image: nicolasdorier/nbxplorer:2.5.4
+    container_name: oscash-nbxplorer
+    restart: unless-stopped
+    ports:
+      - "32838:32838"
+    environment:
+      NBXPLORER_NETWORK: mainnet
+      NBXPLORER_BIND: 0.0.0.0:32838
+      NBXPLORER_CHAINS: btc
+      NBXPLORER_SIGNALFILEDIR: /datadir
+      NBXPLORER_POSTGRES: "User ID=postgres;Host=postgres;Port=5432;Database=nbxplorer;Password=osCASHgate2025!"
+    volumes:
+      - "oscash_datadir:/datadir"  
+      - "oscash_bitcoin_datadir:/home/nbxplorer/.bitcoin"
+    depends_on:
+      - postgres
+    networks:
+      - oscash-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: oscash-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: osCASHgate2025!
+    volumes:
+      - "oscash_postgres_datadir:/var/lib/postgresql/data"
+      - "./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql"
+    networks:
+      - oscash-network
+
+  # Tor (Optional - for privacy)
+  tor-oscash:
+    image: btcpayserver/tor:0.4.7.8
+    container_name: oscash-tor
+    restart: unless-stopped
+    environment:
+      TOR_RELAY_NICKNAME: oscashgate
+      TOR_RELAY_CONTACT: admin@example.com
+    volumes:
+      - "oscash_tor_datadir:/home/tor/.tor"
+      - "oscash_torrc_datadir:/usr/local/etc/tor"
+    networks:
+      - oscash-network
+    profiles:
+      - opt-add-tor
+
+volumes:
+  oscash_datadir:
+  oscash_pluginsdir:
+  oscash_postgres_datadir:
+  oscash_bitcoin_datadir:
+  oscash_tor_datadir:
+  oscash_torrc_datadir:
+
+networks:
+  oscash-network:
+    driver: bridge
