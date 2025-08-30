@@ -1,0 +1,156 @@
+version: '3.8'
+
+services:
+  oscash-mobile-gateway:
+    build: .
+    container_name: oscash-mobile-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      
+      # BTCPay Server Configuration
+      - BTCPAY_URL=${BTCPAY_URL:-http://btcpay:23000}
+      - BTCPAY_API_KEY=${BTCPAY_API_KEY}
+      - BTCPAY_STORE_ID=${BTCPAY_STORE_ID}
+      
+      # Security Configuration
+      - MOBILE_JWT_SECRET=${MOBILE_JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://gate.osCASH.me}
+      
+      # Performance Configuration  
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+      - WEBSOCKET_MAX_CONNECTIONS=${WEBSOCKET_MAX_CONNECTIONS:-1000}
+      
+      # Logging Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FILE=/app/logs/mobile-gateway.log
+      
+      # osCASH.me Branding
+      - OSCASH_BRAND_NAME=osCASH.me
+      - OSCASH_SUPPORT_URL=https://osCASH.me/support
+    
+    volumes:
+      - gateway-logs:/app/logs
+    
+    networks:
+      - oscash-network
+    
+    depends_on:
+      - btcpay
+    
+    healthcheck:
+      test: ["CMD", "node", "/app/src/health-check.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=Host(\`gate.osCASH.me\`)"
+      - "traefik.http.routers.gateway.tls=true"
+      - "traefik.http.routers.gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.services.gateway.loadbalancer.server.port=3000"
+
+  # BTCPay Server (referenced service)
+  btcpay:
+    image: btcpayserver/btcpayserver:latest
+    container_name: oscash-btcpay
+    restart: unless-stopped
+    ports:
+      - "23000:49392"
+    environment:
+      - BTCPAY_HOST=btcpay.osCASH.me
+      - BTCPAY_CHAINS=btc
+      - BTCPAY_BTCEXPLORERURL=http://nbxplorer:32838/
+      - BTCPAY_POSTGRES=Host=postgres;Port=5432;User Id=btcpay;Password=${POSTGRES_PASSWORD};Database=btcpay
+      - BTCPAY_NETWORK=mainnet
+      - BTCPAY_BIND=0.0.0.0:49392
+      - BTCPAY_EXTERNALURL=https://btcpay.osCASH.me
+    volumes:
+      - btcpay-data:/datadir
+    networks:
+      - oscash-network
+    depends_on:
+      - postgres
+      - nbxplorer
+
+  # Database for BTCPay Server
+  postgres:
+    image: postgres:13
+    container_name: oscash-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=btcpay
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=btcpay
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - oscash-network
+
+  # Bitcoin Explorer for BTCPay Server
+  nbxplorer:
+    image: nicolasdorier/nbxplorer:latest
+    container_name: oscash-nbxplorer
+    restart: unless-stopped
+    ports:
+      - "32838:32838"
+    environment:
+      - NBXPLORER_NETWORK=mainnet
+      - NBXPLORER_BIND=0.0.0.0:32838
+      - NBXPLORER_CHAINS=btc
+      - NBXPLORER_SIGNALFILEDIR=/datadir
+    volumes:
+      - nbxplorer-data:/datadir
+      - bitcoin-data:/root/.bitcoin
+    networks:
+      - oscash-network
+
+  # Reverse Proxy (optional)
+  traefik:
+    image: traefik:v2.9
+    container_name: oscash-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-acme:/acme.json
+    networks:
+      - oscash-network
+    labels:
+      - "traefik.enable=true"
+
+volumes:
+  gateway-logs:
+    driver: local
+  btcpay-data:
+    driver: local
+  postgres-data:
+    driver: local
+  nbxplorer-data:
+    driver: local
+  bitcoin-data:
+    driver: local
+  traefik-acme:
+    driver: local
+
+networks:
+  oscash-network:
+    driver: bridge

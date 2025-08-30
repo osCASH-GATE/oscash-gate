@@ -1,0 +1,62 @@
+name: 🚀 Feature Request
+description: Schlage ein neues Feature vor
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für deinen Feature-Vorschlag! Gemeinsam machen wir osCASH.me GATE besser.
+        
+  - type: input
+    id: title
+    attributes:
+      label: Feature-Name
+      description: Kurzer, prägnanter Name für das Feature
+      placeholder: Mobile Payment Notifications
+    validations:
+      required: true
+      
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem/Bedürfnis
+      description: Welches Problem löst dieses Feature?
+      placeholder: Als Benutzer möchte ich... damit ich...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: solution
+    attributes:
+      label: Vorgeschlagene Lösung
+      description: Wie sollte das Feature funktionieren?
+      placeholder: Beschreibe deine Idee zur Umsetzung...
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: component
+    attributes:
+      label: Betroffene Komponente
+      options:
+        - Mobile Gateway
+        - Web Interface
+        - Payment Processing
+        - API
+        - Documentation
+        - Other
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorität
+      options:
+        - Low - Nice to have
+        - Medium - Would be useful
+        - High - Important for usability
+        - Critical - Blocking issue
+    validations:
+      required: true

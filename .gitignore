@@ -302,3 +302,55 @@ BTCPayServer/wwwroot/swagger/v1/openapi.json
 BTCPayServer/appsettings.dev.json
 BTCPayServer.Tests/monero_wallet
 /BTCPayServer.Tests/NewBlocks.bat
+
+# ========================================
+# osCASH.me GATE Security - Sensitive Data
+# ========================================
+
+# Environment variables & secrets
+.env
+.env.local  
+.env.production
+.env.staging
+*.env
+
+# Sensitive configuration files
+*secret*
+*password*  
+*private*
+config.json
+secrets.json
+
+# Logs with potential sensitive data
+*.log
+mobile-gateway.log
+error.log
+debug.log
+access.log
+
+# Private keys & certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.backup
+*.bak
+
+# Local development files
+.vscode/settings.json
+.idea/workspace.xml
+*.local
+
+# osCASH.me specific
+mobile-gateway/.env
+mobile-gateway/mobile-gateway.log
+mobile-gateway/error.log

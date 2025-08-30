@@ -1,11 +1,17 @@
 # osCASH.me GATE
 
-![BTCPay Server](BTCPayServer/wwwroot/img/btc_pay_BG_twitter.png)
+![osCASH.me GATE](BTCPayServer/wwwroot/img/btc_pay_BG_twitter.png)
 
 <h3 align="center">
-  Accept Bitcoin & Cryptocurrency payments ₿💰
+  Accept Bitcoin & Cryptocurrency Payments ₿💰
 </h3>
-<p align="center"> osCASH.me GATE is a free and open-source cryptocurrency payment gateway based on BTCPay Server, designed for privacy-first transactions and seamless integration with the osCASH.me ecosystem.
+<p align="center">
+  osCASH.me GATE is a free and open-source cryptocurrency payment gateway, forked from <a href="https://github.com/btcpayserver/btcpayserver">BTCPay Server</a>. Designed for privacy-first transactions and seamless integration with the osCASH.me ecosystem.
+</p>
+
+<p align="center">
+  <a href="./README.de.md">🇩🇪 Deutsch</a> | 
+  <a href="./README.md">🇬🇧 English</a>
 </p>
 <p align="center">
   <a href="https://circleci.com/gh/btcpayserver/btcpayserver">
